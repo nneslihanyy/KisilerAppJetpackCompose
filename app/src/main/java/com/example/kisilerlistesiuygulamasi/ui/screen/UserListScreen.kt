@@ -1,5 +1,6 @@
 package com.example.kisilerlistesiuygulamasi.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,43 +10,68 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kisilerlistesiuygulamasi.ui.components.UserItem
-import com.example.kisilerlistesiuygulamasi.ui.viewmodel.UserUiState
-import com.example.kisilerlistesiuygulamasi.ui.viewmodel.UserViewModel
+import androidx.compose.material.icons.filled.Search
+import com.example.kisilerlistesiuygulamasi.viewmodel.UserUiState
+import com.example.kisilerlistesiuygulamasi.viewmodel.UserViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserListScreen(viewModel: UserViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchText by viewModel.searchText.collectAsState()
 
     Scaffold(
         topBar = {
-            @OptIn(ExperimentalMaterial3Api::class)
-            TopAppBar(title = { Text("Kullanıcı Listesi") })
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                TopAppBar(
+                    title = { Text("Kullanıcı Listesi") }
+                )
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = viewModel::onSearchTextChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("İsim veya email ara...") },
+                    leadingIcon = {
+                        Icon(androidx.compose.material.icons.Icons.Default.Search, contentDescription = null)
+                    },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+            }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
             when (val state = uiState) {
                 is UserUiState.Loading -> {
-                    // Yükleniyor durumu [cite: 39]
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 is UserUiState.Success -> {
-                    // Liste gösterme [cite: 35]
-                    LazyColumn {
+                    LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
                         items(state.users) { user ->
                             UserItem(user = user)
                         }
                     }
                 }
                 is UserUiState.Error -> {
-                    // Hata durumu ve Tekrar Dene butonu [cite: 40]
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(16.dp)
+                        )
                         Button(onClick = { viewModel.getUsers() }) {
                             Text("Tekrar Dene")
                         }

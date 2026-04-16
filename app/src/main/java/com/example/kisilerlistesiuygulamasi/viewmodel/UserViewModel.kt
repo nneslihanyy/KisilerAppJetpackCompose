@@ -1,13 +1,11 @@
-package com.example.kisilerlistesiuygulamasi.ui.viewmodel
+package com.example.kisilerlistesiuygulamasi.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kisilerlistesiuygulamasi.data.model.User
 import com.example.kisilerlistesiuygulamasi.data.remote.RetrofitInstance
 import com.example.kisilerlistesiuygulamasi.data.repository.UserRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 sealed interface UserUiState {
@@ -19,10 +17,31 @@ sealed interface UserUiState {
 class UserViewModel : ViewModel() {
     private val repository = UserRepository(RetrofitInstance.api)
 
-    private val _uiState = MutableStateFlow<UserUiState>(UserUiState.Loading)
-    val uiState: StateFlow<UserUiState> = _uiState.asStateFlow()
+    private val _searchText = MutableStateFlow("")
+    val searchText = _searchText.asStateFlow()
 
-    init { getUsers() }
+    private val _uiState = MutableStateFlow<UserUiState>(UserUiState.Loading)
+
+
+    val uiState: StateFlow<UserUiState> = _searchText
+        .combine(_uiState) { text, state ->
+            if (state is UserUiState.Success && text.isNotBlank()) {
+                UserUiState.Success(state.users.filter {
+                    it.name.contains(text, ignoreCase = true) ||
+                            it.email.contains(text, ignoreCase = true)
+                })
+            } else {
+                state
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserUiState.Loading)
+
+    init {
+        getUsers()
+    }
+
+    fun onSearchTextChange(text: String) {
+        _searchText.value = text
+    }
 
     fun getUsers() {
         viewModelScope.launch {
@@ -31,7 +50,7 @@ class UserViewModel : ViewModel() {
                 val users = repository.getUsers()
                 _uiState.value = UserUiState.Success(users)
             } catch (e: Exception) {
-                _uiState.value = UserUiState.Error(e.message ?: "Hata oluştu")
+                _uiState.value = UserUiState.Error(e.message ?: "Bir hata oluştu")
             }
         }
     }
