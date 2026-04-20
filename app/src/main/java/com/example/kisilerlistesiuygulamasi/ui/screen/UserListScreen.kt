@@ -11,7 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kisilerlistesiuygulamasi.ui.components.UserItem
 import androidx.compose.material.icons.filled.Search
 import com.example.kisilerlistesiuygulamasi.viewmodel.UserUiState
@@ -19,7 +18,10 @@ import com.example.kisilerlistesiuygulamasi.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserListScreen(viewModel: UserViewModel = viewModel()) {
+fun UserListScreen(
+    viewModel: UserViewModel,
+    onUserClick: (Int) -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
 
@@ -57,7 +59,10 @@ fun UserListScreen(viewModel: UserViewModel = viewModel()) {
                 is UserUiState.Success -> {
                     LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
                         items(state.users) { user ->
-                            UserItem(user = user)
+                            UserItem(
+                                user = user,
+                                onClick = { onUserClick(user.id) }
+                            )
                         }
                     }
                 }

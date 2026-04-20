@@ -54,4 +54,13 @@ class UserViewModel : ViewModel() {
             }
         }
     }
+
+    fun getUserById(id: Int): User? {
+        val currentState = _uiState.value
+        return if (currentState is UserUiState.Success) {
+            currentState.users.find { it.id == id }
+        } else {
+            null
+        }
+    }
 }
